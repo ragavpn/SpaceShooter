@@ -1,9 +1,9 @@
-import gym
-from gym import spaces
+import gymnasium
+from gymnasium import spaces
 import numpy as np
 import pygame
 
-class MultiAgentSpaceShooterEnv(gym.Env):
+class MultiAgentSpaceShooterEnv(gymnasium.Env):
     def __init__(self, num_agents=3, num_enemies=5, max_fps=30, reward_params=None, hyperparams=None):
         super(MultiAgentSpaceShooterEnv, self).__init__()
         self.num_agents = num_agents
@@ -45,7 +45,7 @@ class MultiAgentSpaceShooterEnv(gym.Env):
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(None, 36)
 
-    def reset(self):
+    def reset(self, seed=0):
         self.bot_positions = np.full(self.num_agents, 0.5)
         self.enemy_positions = np.random.uniform(0, 1, self.num_enemies)
         self.enemy_y_positions = np.zeros(self.num_enemies)
@@ -131,7 +131,7 @@ class MultiAgentSpaceShooterEnv(gym.Env):
 
         total_reward = np.sum(rewards)
 
-        return self._get_obs(), total_reward, done, {}
+        return self._get_obs(), total_reward, done, False, {}
 
     def _get_obs(self):
         return np.concatenate([self.bot_positions, self.enemy_positions, self.enemy_y_positions, self.healths, self.scores])

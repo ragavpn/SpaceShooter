@@ -3,6 +3,34 @@ import torch as th
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from env_isolate import MultiAgentSpaceShooterEnv
+import psutil, csv, time, threading
+from datetime import date
+
+# Track resource utilization
+
+process = psutil.Process(os.getpid()) # Current process
+
+util_start_time = time.time()
+util_file = open(f"./util_{time.strftime('%Y-%m-%dT%H:%M:%S')}.csv", 'w')
+util_writer = csv.writer(util_file)
+util_writer.writerow(["Time Elapsed (runner.py)",
+                      f"CPU% (max {psutil.cpu_freq().max:.4f} MHz)",
+                      f"Mem% (tot. {psutil.virtual_memory().total/((2**10)**3):.4f} GB)",
+                      "Comment"])
+
+def util_write(comment=""):
+    util_writer.writerow([time.time() - util_start_time,
+                          process.cpu_percent(),
+                          process.memory_percent(),
+                          comment])
+    util_file.flush()
+
+def util_write_sched():
+    util_write()
+    threading.Timer(1, util_write_sched).start()
+util_write_sched()
+
+# Define env
 
 def lr_schedule(progress_remaining):
     return 1e-4 * progress_remaining
@@ -24,6 +52,8 @@ hyperparams = {
 
 env = DummyVecEnv([lambda: MultiAgentSpaceShooterEnv(num_agents=num_agents, num_enemies=num_enemies, reward_params=reward_params, hyperparams=hyperparams)])
 
+util_write("env created")
+
 device = 'cuda' if th.cuda.is_available() else 'cpu'
 print(f"Using device: {device}")
 
@@ -31,14 +61,20 @@ model_file = "ppo_multiagent_space_shooter_env.zip"
 
 if os.path.exists(model_file):
     print("Loading the saved model...")
+    util_write("beginning model load")
     model = PPO.load(model_file, env=env, device=device, weights_only=True)
+    util_write("finished model load")
 else:
     print("No saved model found. Creating a new model...")
+    util_write("beginning model creation")
     model = PPO('MlpPolicy', env, verbose=1, learning_rate=lr_schedule, n_steps=2048, batch_size=64, device=device)
     model.learn(total_timesteps=10000)
     model.save(model_file)
+    util_write("finished model creation")
+
 
 for episode in range(100):
+    util_write(f"episode {episode}")
     state = env.reset()
     done = False
     episode_reward = 0
