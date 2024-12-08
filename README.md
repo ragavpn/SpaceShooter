@@ -18,6 +18,12 @@ conda install -c conda-forge gym=0.21.0 opencv=4.5.5
 pip install stable-baselines3==1.5.0 
 pip install pygame
 ```
+- **Utilizing the YAML file**: Install using the .yaml file to preserve dependencies
+
+```bash
+# Modify the yaml file last line prefix to your anaconda or miniconda installation directory - and then continue the above steps
+conda env create -f environment_linux.yaml
+```
 <br>
 
 - **Training**: Code is given below to train the agent.
