@@ -11,17 +11,18 @@ from datetime import date
 process = psutil.Process(os.getpid()) # Current process
 
 util_start_time = time.time()
+util_mem_total = psutil.virtual_memory().total/((2**10)**3) #GB
 util_file = open(f"./util_{time.strftime('%Y-%m-%dT%H:%M:%S')}.csv", 'w')
 util_writer = csv.writer(util_file)
 util_writer.writerow(["Time Elapsed (runner.py)",
-                      f"CPU% (max {psutil.cpu_freq().max:.4f} MHz)",
-                      f"Mem% (tot. {psutil.virtual_memory().total/((2**10)**3):.4f} GB)",
+                      f"% CPU util. (max freq. {psutil.cpu_freq().max:.4f} MHz)",
+                      f"Mem (tot. {util_mem_total:.6f} GB)",
                       "Comment"])
 
 def util_write(comment=""):
     util_writer.writerow([time.time() - util_start_time,
                           process.cpu_percent(),
-                          process.memory_percent(),
+                          process.memory_percent()/100*util_mem_total,
                           comment])
     util_file.flush()
 
